@@ -1,0 +1,44 @@
+name: CI - Validate Migrations
+
+on:
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - 'migrations/**'
+      - 'schemachange-config.yml'
+      - '.github/workflows/**'
+
+jobs:
+  lint-and-dryrun:
+    name: SQL Lint + schemachange Dry-Run
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install schemachange==3.7.0 sqlfluff==3.0.0
+
+      - name: SQL Lint with sqlfluff
+        run: |
+          sqlfluff lint migrations/ --dialect snowflake --exclude-rules L016,L031 || true
+
+      - name: schemachange dry-run (syntax check)
+        env:
+          SF_ACCOUNT:   ${{ secrets.SF_ACCOUNT }}
+          SF_USER:      ${{ secrets.SF_USER }}
+          SF_PASSWORD:  ${{ secrets.SF_PASSWORD }}
+          SF_ROLE:      ${{ secrets.SF_ROLE }}
+          SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
+          SF_DATABASE:  ${{ secrets.SF_DB_DEV }}
+          SF_SCHEMA:    'APP'
+        run: |
+          schemachange deploy --config-folder . --dry-run
