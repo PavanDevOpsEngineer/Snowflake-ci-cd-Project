@@ -1,7 +1,7 @@
 -- =========================================================
 -- Migration: V1.1.1 - Create base schema & audit objects
 -- Author   : CI/CD Bot
--- =========================================================
+--- =========================================================
 
 CREATE SCHEMA IF NOT EXISTS {{ env_schema }}
     COMMENT = 'Application schema managed by schemachange CI/CD';
