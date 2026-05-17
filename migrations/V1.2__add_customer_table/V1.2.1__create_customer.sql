@@ -1,5 +1,5 @@
 -- =========================================================
--- Migration: V1.2.1 - Create CUSTOMER table
+--Migration: V1.2.1 - Create CUSTOMER table
 -- =========================================================
 
 CREATE TABLE IF NOT EXISTS {{ env_schema }}.CUSTOMER (

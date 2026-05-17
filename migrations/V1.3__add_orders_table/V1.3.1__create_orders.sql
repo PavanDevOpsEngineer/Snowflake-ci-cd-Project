@@ -1,5 +1,5 @@
 -- =========================================================
--- Migration: V1.3.1 - Create ORDERS table with FK
+--Migration: V1.3.1 - Create ORDERS table with FK
 -- =========================================================
 
 CREATE TABLE IF NOT EXISTS {{ env_schema }}.ORDERS (

@@ -2,7 +2,7 @@
 -- Migration: V1.1.1 - Create base schema & audit objects
 -- Author   : Pavan Mishra
 -- Created  : 2024-06-01
--- Description: Initial schema setup for the application, including
+--Description: Initial schema setup for the application, including
 --- =========================================================
 
 CREATE SCHEMA IF NOT EXISTS {{ env_schema }}
