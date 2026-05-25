@@ -1,0 +1,74 @@
+name: CD - Deploy to QA
+
+on:
+  workflow_run:
+    workflows: ["CD - Deploy to DEV"]
+    types: [completed]
+    branches: [develop]
+
+concurrency:
+  group: deploy-qa
+  cancel-in-progress: false
+
+jobs:
+  deploy-qa:
+    name: Deploy to QA environment
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    environment: qa
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install schemachange
+        run: pip install schemachange==3.7.0
+
+      - name: Dry-run migrations
+        env:
+          SF_ACCOUNT:        ${{ secrets.SF_ACCOUNT }}
+          SF_USER:           ${{ secrets.SF_USER }}
+          SNOWFLAKE_PASSWORD: ${{ secrets.SF_PASSWORD }}
+          SF_ROLE:           ${{ secrets.SF_ROLE }}
+          SF_WAREHOUSE:      ${{ secrets.SF_WAREHOUSE }}
+          SF_DATABASE:       ${{ secrets.SF_DB_QA }}
+          SF_SCHEMA:         'APP'
+        run: schemachange deploy --config-folder . --dry-run --verbose
+
+      - name: Deploy migrations to QA
+        env:
+          SF_ACCOUNT:        ${{ secrets.SF_ACCOUNT }}
+          SF_USER:           ${{ secrets.SF_USER }}
+          SNOWFLAKE_PASSWORD: ${{ secrets.SF_PASSWORD }}
+          SF_ROLE:           ${{ secrets.SF_ROLE }}
+          SF_WAREHOUSE:      ${{ secrets.SF_WAREHOUSE }}
+          SF_DATABASE:       ${{ secrets.SF_DB_QA }}
+          SF_SCHEMA:         'APP'
+        run: schemachange deploy --config-folder . --verbose
+
+      - name: Install test dependencies
+        run: pip install -r tests/requirements.txt
+
+      - name: Run QA regression + load tests
+        env:
+          SF_ACCOUNT:  ${{ secrets.SF_ACCOUNT }}
+          SF_USER:     ${{ secrets.SF_USER }}
+          SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
+          SF_ROLE:     ${{ secrets.SF_ROLE }}
+          SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
+          SF_DATABASE: ${{ secrets.SF_DB_QA }}
+          SF_SCHEMA:   'APP'
+        run: pytest tests/ -v -m "qa or load" --tb=short
+
+      - name: Notify Slack on failure
+        if: failure()
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":":warning: QA deploy FAILED\nActor: ${{ github.actor }}\nRef: ${{ github.event.workflow_run.head_sha }}\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}' \
+            ${{ secrets.SLACK_WEBHOOK_URL }}
