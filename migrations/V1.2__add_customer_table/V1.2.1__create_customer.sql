@@ -15,3 +15,4 @@ CREATE TABLE IF NOT EXISTS {{ env_schema }}.CUSTOMER (
 COMMENT = 'Master customer table';
 
 CREATE INDEX IF NOT EXISTS IDX_CUSTOMER_EMAIL ON {{ env_schema }}.CUSTOMER(EMAIL);
+--

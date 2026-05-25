@@ -1,6 +1,6 @@
 -- =========================================================
 -- Repeatable Migration: Customer-Orders denormalized view
--- Re-runs automatically whenever the file hash changes.--
+-- Re-runs automatically whenever the file hash changes.---
 -- =========================================================
 
 CREATE OR REPLACE VIEW {{ env_schema }}.VW_CUSTOMER_ORDERS AS

@@ -1,5 +1,5 @@
 -- =========================================================
--- Repeatable Migration: Stored procedure - top N customers--
+-- Repeatable Migration: Stored procedure - top N customers----
 -- =========================================================
 
 CREATE OR REPLACE PROCEDURE {{ env_schema }}.SP_GET_TOP_CUSTOMERS(TOP_N NUMBER)

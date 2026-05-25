@@ -13,3 +13,4 @@ CREATE TABLE IF NOT EXISTS {{ env_schema }}.ORDERS (
         REFERENCES {{ env_schema }}.CUSTOMER(CUSTOMER_ID)
 )
 COMMENT = 'Customer orders fact table';
+--

@@ -32,10 +32,9 @@ jobs:
         env:
           SF_ACCOUNT:   ${{ secrets.SF_ACCOUNT }}
           SF_USER:      ${{ secrets.SF_USER }}
+          SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
           SF_ROLE:      ${{ secrets.SF_ROLE }}
           SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
-          SF_DATABASE:  ${{ secrets.SF_DB_QA }}
-          SF_SCHEMA:    'APP'
         run: schemachange deploy --config-folder . --verbose
 
       - name: Install test dependencies
@@ -45,9 +44,7 @@ jobs:
         env:
           SF_ACCOUNT:  ${{ secrets.SF_ACCOUNT }}
           SF_USER:     ${{ secrets.SF_USER }}
-          SNOWFLAKE_PASSWORD: ${{ secrets.SF_PASSWORD }}
+          SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
           SF_ROLE:     ${{ secrets.SF_ROLE }}
-          SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
-          SF_DATABASE: ${{ secrets.SF_DB_QA }}
           SF_SCHEMA:   'APP'
         run: pytest tests/ -v -m "qa or load" --tb=short

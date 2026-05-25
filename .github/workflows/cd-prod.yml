@@ -45,9 +45,8 @@ jobs:
         env:
           SF_ACCOUNT:  ${{ secrets.SF_ACCOUNT }}
           SF_USER:     ${{ secrets.SF_USER }}
+          SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
           SF_ROLE:     ${{ secrets.SF_ROLE }}
-          SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
-          SF_DATABASE: ${{ secrets.SF_DB_PROD }}
         run: python scripts/backup_ddl.py
 
       - name: Deploy to PROD
@@ -55,10 +54,8 @@ jobs:
         env:
           SF_ACCOUNT:   ${{ secrets.SF_ACCOUNT }}
           SF_USER:      ${{ secrets.SF_USER }}
+          SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
           SF_ROLE:      ${{ secrets.SF_ROLE }}
-          SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
-          SF_DATABASE:  ${{ secrets.SF_DB_PROD }}
-           SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
           SF_SCHEMA:    'APP'
         run: schemachange deploy --config-folder . --verbose
 
@@ -67,9 +64,9 @@ jobs:
         env:
           SF_ACCOUNT:  ${{ secrets.SF_ACCOUNT }}
           SF_USER:     ${{ secrets.SF_USER }}
+          SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
           SF_ROLE:     ${{ secrets.SF_ROLE }}
-          SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
-          SF_DATABASE: ${{ secrets.SF_DB_PROD }}
+
           TARGET_VERSION: ${{ github.event.inputs.target_version }}
         run: python scripts/rollback.py
 
@@ -78,10 +75,8 @@ jobs:
         env:
           SF_ACCOUNT:  ${{ secrets.SF_ACCOUNT }}
           SF_USER:     ${{ secrets.SF_USER }}
+          SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
           SF_ROLE:     ${{ secrets.SF_ROLE }}
-          SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
-          SF_DATABASE: ${{ secrets.SF_DB_PROD }}
-          SF_SCHEMA:   'APP'
         run: |
           pip install -r tests/requirements.txt
           pytest tests/ -v -m "smoke" --tb=short
