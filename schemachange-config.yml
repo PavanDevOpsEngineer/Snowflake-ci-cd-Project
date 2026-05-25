@@ -11,7 +11,7 @@ snowflake-role:      '{{ env_var("SF_ROLE") }}'
 snowflake-warehouse: '{{ env_var("SF_WAREHOUSE") }}'
 snowflake-database:  '{{ env_var("SF_DATABASE") }}'
 
-change-history-table: 'SCHEMACHANGE.CHANGE_HISTORY'
+change-history-table: '{{ env_var("SF_DATABASE") }}.SCHEMACHANGE.CHANGE_HISTORY'
 create-change-history-table: true
 autocommit: false
 dry-run: false
