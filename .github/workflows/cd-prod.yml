@@ -45,7 +45,6 @@ jobs:
         env:
           SF_ACCOUNT:  ${{ secrets.SF_ACCOUNT }}
           SF_USER:     ${{ secrets.SF_USER }}
-          SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
           SF_ROLE:     ${{ secrets.SF_ROLE }}
           SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
           SF_DATABASE: ${{ secrets.SF_DB_PROD }}
@@ -59,6 +58,7 @@ jobs:
           SF_ROLE:      ${{ secrets.SF_ROLE }}
           SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
           SF_DATABASE:  ${{ secrets.SF_DB_PROD }}
+           SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
           SF_SCHEMA:    'APP'
         run: schemachange deploy --config-folder . --verbose
 
@@ -67,7 +67,6 @@ jobs:
         env:
           SF_ACCOUNT:  ${{ secrets.SF_ACCOUNT }}
           SF_USER:     ${{ secrets.SF_USER }}
-          SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
           SF_ROLE:     ${{ secrets.SF_ROLE }}
           SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
           SF_DATABASE: ${{ secrets.SF_DB_PROD }}
@@ -79,7 +78,6 @@ jobs:
         env:
           SF_ACCOUNT:  ${{ secrets.SF_ACCOUNT }}
           SF_USER:     ${{ secrets.SF_USER }}
-          SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
           SF_ROLE:     ${{ secrets.SF_ROLE }}
           SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
           SF_DATABASE: ${{ secrets.SF_DB_PROD }}
