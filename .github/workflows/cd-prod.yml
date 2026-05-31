@@ -28,7 +28,6 @@ jobs:
     uses: ./.github/workflows/deploy-common.yml
     with:
       environment_name: prod
-      sf_database: ${{ secrets.SF_DB_PROD }}
       sf_schema: 'APP'
       action: ${{ github.event.inputs.action }}
       target_version: ${{ github.event.inputs.target_version }}
@@ -39,7 +38,8 @@ jobs:
       SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
       SF_ROLE: ${{ secrets.SF_ROLE }}
       SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
-    environment: prod
+      SF_DATABASE: ${{ secrets.SF_DB_PROD }}
+    
 
   smoke-tests:
     name: Smoke tests

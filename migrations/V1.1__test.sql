@@ -17,5 +17,5 @@ VALUES
     ('Test B', 20.75, TRUE),
     ('Test C', 30.00, FALSE);
 
--- Verify data was inserted
+-- Verify data was inserted--
 SELECT * FROM {{ env_schema }}.TEST_TABLE;

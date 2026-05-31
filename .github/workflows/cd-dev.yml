@@ -16,7 +16,6 @@ jobs:
     uses: ./.github/workflows/deploy-common.yml
     with:
       environment_name: dev
-      sf_database: ${{ secrets.SF_DB_DEV }}
       sf_schema: 'APP'
       action: deploy
       run_backup: true
@@ -26,7 +25,7 @@ jobs:
       SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
       SF_ROLE: ${{ secrets.SF_ROLE }}
       SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
-    environment: dev
+      SF_DATABASE: ${{ secrets.SF_DB_DEV }}
 
   post-tests:
     name: Run post-deploy validation tests

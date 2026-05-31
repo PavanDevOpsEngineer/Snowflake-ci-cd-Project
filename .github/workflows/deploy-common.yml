@@ -6,9 +6,35 @@ on:
       environment_name:
         required: true
         type: string
-      sf_database:
-        required: true
+      sf_schema:
+        required: false
         type: string
+        default: 'APP'
+      action:
+        required: false
+        type: string
+        default: 'deploy'
+      target_version:
+        required: false
+        type: string
+        default: ''
+      run_backup:
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      SF_ACCOUNT:
+        required: true
+      SF_USER:
+        required: true
+      SF_PASSWORD:
+        required: true
+      SF_ROLE:
+        required: false
+      SF_WAREHOUSE:
+        required: false
+      SF_DATABASE:
+        required: true
       sf_schema:
         required: false
         type: string
@@ -40,6 +66,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment_name }}
     steps:
       - uses: actions/checkout@v4
 
@@ -58,7 +85,7 @@ jobs:
           SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
           SF_ROLE: ${{ secrets.SF_ROLE }}
           SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
-          SF_DATABASE: ${{ inputs.sf_database }}
+          SF_DATABASE: ${{ secrets.SF_DATABASE }}
         run: python scripts/validate_env.py
 
       - name: Pre-deploy DDL backup
@@ -69,7 +96,7 @@ jobs:
           SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
           SF_ROLE: ${{ secrets.SF_ROLE }}
           SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
-          SF_DATABASE: ${{ inputs.sf_database }}
+          SF_DATABASE: ${{ secrets.SF_DATABASE }}
         run: python scripts/backup_ddl.py
 
       - name: Dry-run migrations
@@ -80,7 +107,7 @@ jobs:
           SNOWFLAKE_PASSWORD: ${{ secrets.SF_PASSWORD }}
           SF_ROLE: ${{ secrets.SF_ROLE }}
           SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
-          SF_DATABASE: ${{ inputs.sf_database }}
+          SF_DATABASE: ${{ secrets.SF_DATABASE }}
           SF_SCHEMA: ${{ inputs.sf_schema }}
         run: schemachange deploy --config-folder . --dry-run --verbose
 
@@ -92,7 +119,7 @@ jobs:
           SNOWFLAKE_PASSWORD: ${{ secrets.SF_PASSWORD }}
           SF_ROLE: ${{ secrets.SF_ROLE }}
           SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
-          SF_DATABASE: ${{ inputs.sf_database }}
+          SF_DATABASE: ${{ secrets.SF_DATABASE }}
           SF_SCHEMA: ${{ inputs.sf_schema }}
         run: schemachange deploy --config-folder . --verbose
 
@@ -104,7 +131,7 @@ jobs:
           SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
           SF_ROLE: ${{ secrets.SF_ROLE }}
           SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
-          SF_DATABASE: ${{ inputs.sf_database }}
+          SF_DATABASE: ${{ secrets.SF_DATABASE }}
           SF_SCHEMA: ${{ inputs.sf_schema }}
           TARGET_VERSION: ${{ inputs.target_version }}
         run: python scripts/rollback.py
