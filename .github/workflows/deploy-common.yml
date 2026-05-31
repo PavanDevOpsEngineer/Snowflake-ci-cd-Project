@@ -1,0 +1,110 @@
+name: Deploy Common
+
+on:
+  workflow_call:
+    inputs:
+      environment_name:
+        required: true
+        type: string
+      sf_database:
+        required: true
+        type: string
+      sf_schema:
+        required: false
+        type: string
+        default: 'APP'
+      action:
+        required: false
+        type: string
+        default: 'deploy'
+      target_version:
+        required: false
+        type: string
+        default: ''
+      run_backup:
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      SF_ACCOUNT:
+        required: true
+      SF_USER:
+        required: true
+      SF_PASSWORD:
+        required: true
+      SF_ROLE:
+        required: false
+      SF_WAREHOUSE:
+        required: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install schemachange
+        run: pip install schemachange==3.7.0
+
+      - name: Validate environment
+        env:
+          SF_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
+          SF_USER: ${{ secrets.SF_USER }}
+          SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
+          SF_ROLE: ${{ secrets.SF_ROLE }}
+          SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
+          SF_DATABASE: ${{ inputs.sf_database }}
+        run: python scripts/validate_env.py
+
+      - name: Pre-deploy DDL backup
+        if: ${{ inputs.run_backup == 'true' || inputs.run_backup == true }}
+        env:
+          SF_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
+          SF_USER: ${{ secrets.SF_USER }}
+          SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
+          SF_ROLE: ${{ secrets.SF_ROLE }}
+          SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
+          SF_DATABASE: ${{ inputs.sf_database }}
+        run: python scripts/backup_ddl.py
+
+      - name: Dry-run migrations
+        if: ${{ inputs.action != 'rollback' }}
+        env:
+          SF_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
+          SF_USER: ${{ secrets.SF_USER }}
+          SNOWFLAKE_PASSWORD: ${{ secrets.SF_PASSWORD }}
+          SF_ROLE: ${{ secrets.SF_ROLE }}
+          SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
+          SF_DATABASE: ${{ inputs.sf_database }}
+          SF_SCHEMA: ${{ inputs.sf_schema }}
+        run: schemachange deploy --config-folder . --dry-run --verbose
+
+      - name: Deploy migrations
+        if: ${{ inputs.action != 'rollback' }}
+        env:
+          SF_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
+          SF_USER: ${{ secrets.SF_USER }}
+          SNOWFLAKE_PASSWORD: ${{ secrets.SF_PASSWORD }}
+          SF_ROLE: ${{ secrets.SF_ROLE }}
+          SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
+          SF_DATABASE: ${{ inputs.sf_database }}
+          SF_SCHEMA: ${{ inputs.sf_schema }}
+        run: schemachange deploy --config-folder . --verbose
+
+      - name: Rollback
+        if: ${{ inputs.action == 'rollback' }}
+        env:
+          SF_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
+          SF_USER: ${{ secrets.SF_USER }}
+          SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
+          SF_ROLE: ${{ secrets.SF_ROLE }}
+          SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
+          SF_DATABASE: ${{ inputs.sf_database }}
+          SF_SCHEMA: ${{ inputs.sf_schema }}
+          TARGET_VERSION: ${{ inputs.target_version }}
+        run: python scripts/rollback.py

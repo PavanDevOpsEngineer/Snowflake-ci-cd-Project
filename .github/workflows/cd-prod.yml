@@ -24,70 +24,29 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy-prod:
-    name: Deploy / Rollback PROD
-    runs-on: ubuntu-latest
-    environment:
-      name: prod
+  deploy:
+    uses: ./.github/workflows/deploy-common.yml
+    with:
+      environment_name: prod
+      sf_database: ${{ secrets.SF_DB_PROD }}
+      sf_schema: 'APP'
+      action: ${{ github.event.inputs.action }}
+      target_version: ${{ github.event.inputs.target_version }}
+      run_backup: true
+    secrets:
+      SF_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
+      SF_USER: ${{ secrets.SF_USER }}
+      SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
+      SF_ROLE: ${{ secrets.SF_ROLE }}
+      SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
+    environment: prod
 
+  smoke-tests:
+    name: Smoke tests
+    runs-on: ubuntu-latest
+    needs: deploy
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install schemachange
-        run: pip install schemachange==3.7.0
-
-      - name: Pre-deploy DDL backup
-        env:
-          SF_ACCOUNT:  ${{ secrets.SF_ACCOUNT }}
-          SF_USER:     ${{ secrets.SF_USER }}
-          SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
-          SF_ROLE:     ${{ secrets.SF_ROLE }}
-          SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
-          SF_DATABASE: ${{ secrets.SF_DB_PROD }}
-        run: python scripts/backup_ddl.py
-
-      - name: Dry-run migrations
-        if: ${{ github.event.inputs.action != 'rollback' }}
-        env:
-          SF_ACCOUNT:        ${{ secrets.SF_ACCOUNT }}
-          SF_USER:           ${{ secrets.SF_USER }}
-          SNOWFLAKE_PASSWORD: ${{ secrets.SF_PASSWORD }}
-          SF_ROLE:           ${{ secrets.SF_ROLE }}
-          SF_WAREHOUSE:      ${{ secrets.SF_WAREHOUSE }}
-          SF_DATABASE:       ${{ secrets.SF_DB_PROD }}
-          SF_SCHEMA:         'APP'
-        run: schemachange deploy --config-folder . --dry-run --verbose
-
-      - name: Deploy to PROD
-        if: ${{ github.event.inputs.action != 'rollback' }}
-        env:
-          SF_ACCOUNT:        ${{ secrets.SF_ACCOUNT }}
-          SF_USER:           ${{ secrets.SF_USER }}
-          SNOWFLAKE_PASSWORD: ${{ secrets.SF_PASSWORD }}
-          SF_ROLE:           ${{ secrets.SF_ROLE }}
-          SF_WAREHOUSE:      ${{ secrets.SF_WAREHOUSE }}
-          SF_DATABASE:       ${{ secrets.SF_DB_PROD }}
-          SF_SCHEMA:         'APP'
-        run: schemachange deploy --config-folder . --verbose
-
-      - name: Rollback PROD
-        if: ${{ github.event.inputs.action == 'rollback' }}
-        env:
-          SF_ACCOUNT:  ${{ secrets.SF_ACCOUNT }}
-          SF_USER:     ${{ secrets.SF_USER }}
-          SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
-          SF_ROLE:     ${{ secrets.SF_ROLE }}
-          SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
-          SF_DATABASE: ${{ secrets.SF_DB_PROD }}
-          SF_SCHEMA:   'APP'
-          TARGET_VERSION: ${{ github.event.inputs.target_version }}
-        run: python scripts/rollback.py
-
       - name: Smoke tests
         env:
           SF_ACCOUNT:  ${{ secrets.SF_ACCOUNT }}
@@ -101,8 +60,13 @@ jobs:
           pip install -r tests/requirements.txt
           pytest tests/ -v -m "smoke" --tb=short
 
-      - name: Notify Slack on failure
-        if: failure()
+  notify-on-failure:
+    name: Notify Slack on failure
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: ${{ needs.deploy.result != 'success' }}
+    steps:
+      - name: Notify Slack
         run: |
           curl -X POST -H 'Content-type: application/json' \
             --data '{"text":":rotating_light: PROD deploy FAILED\nActor: ${{ github.actor }}\nRef: ${{ github.ref }}\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}' \

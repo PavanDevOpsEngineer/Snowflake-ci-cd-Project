@@ -13,17 +13,40 @@ import snowflake.connector
 
 
 def main():
+    def get_env(name, required=True):
+        val = os.environ.get(name)
+        if val is None:
+            if required:
+                sys.exit(f"{name} env var is required")
+            return None
+        v = val.strip()
+        if v in ("", '""', "''"):
+            if required:
+                sys.exit(f"{name} env var is empty or invalid: {val!r}")
+            return None
+        if len(v) >= 2 and v[0] == v[-1] and v[0] in ("'", '"'):
+            v = v[1:-1].strip()
+        if v == "":
+            if required:
+                sys.exit(f"{name} env var is empty after stripping quotes")
+            return None
+        return v
+
+    account = get_env("SF_ACCOUNT")
+    user = get_env("SF_USER")
+    password = get_env("SF_PASSWORD")
+    role = get_env("SF_ROLE", required=False)
+    warehouse = get_env("SF_WAREHOUSE", required=False)
+
     conn = snowflake.connector.connect(
-        account=os.environ["SF_ACCOUNT"],
-        user=os.environ["SF_USER"],
-        password=os.environ["SF_PASSWORD"],
-        role=os.environ["SF_ROLE"],
-        warehouse=os.environ["SF_WAREHOUSE"],
+        account=account,
+        user=user,
+        password=password,
+        role=role,
+        warehouse=warehouse,
     )
 
-    database = os.environ.get("SF_DATABASE", "")
-    if not database:
-        sys.exit("SF_DATABASE env var is required")
+    database = get_env("SF_DATABASE")
 
     cur = conn.cursor()
 
