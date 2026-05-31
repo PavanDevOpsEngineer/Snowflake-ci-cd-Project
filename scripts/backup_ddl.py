@@ -37,6 +37,7 @@ def main():
     password = get_env("SF_PASSWORD")
     role = get_env("SF_ROLE", required=False)
     warehouse = get_env("SF_WAREHOUSE", required=False)
+    database = get_env("SF_DATABASE")
 
     conn = snowflake.connector.connect(
         account=account,
@@ -45,8 +46,6 @@ def main():
         role=role,
         warehouse=warehouse,
     )
-
-    database = get_env("SF_DATABASE")
 
     cur = conn.cursor()
 
@@ -72,17 +71,19 @@ def main():
             cur.execute(f"SHOW TABLES IN SCHEMA {database}.{schema}")
             for row in cur.fetchall():
                 table_name = row[1]
-                cur.execute(f"SELECT GET_DDL('TABLE', '{database}.{schema}.{table_name}')")
-                ddl = cur.fetchone()[0]
-                backup["schemas"][schema]["tables"].append(
-                    {"name": table_name, "ddl": ddl}
-                )
+                    cur.execute(f"SELECT GET_DDL('TABLE', '{database}.{schema}.{table_name}')")
+                    row = cur.fetchone()
+                    ddl = row[0] if row and row[0] is not None else ""
+                    backup["schemas"][schema]["tables"].append(
+                        {"name": table_name, "ddl": ddl}
+                    )
 
             cur.execute(f"SHOW VIEWS IN SCHEMA {database}.{schema}")
             for row in cur.fetchall():
                 view_name = row[1]
                 cur.execute(f"SELECT GET_DDL('VIEW', '{database}.{schema}.{view_name}')")
-                ddl = cur.fetchone()[0]
+                row = cur.fetchone()
+                ddl = row[0] if row and row[0] is not None else ""
                 backup["schemas"][schema]["views"].append(
                     {"name": view_name, "ddl": ddl}
                 )

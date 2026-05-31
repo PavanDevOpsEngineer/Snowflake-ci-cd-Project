@@ -35,33 +35,6 @@ on:
         required: false
       SF_DATABASE:
         required: true
-      sf_schema:
-        required: false
-        type: string
-        default: 'APP'
-      action:
-        required: false
-        type: string
-        default: 'deploy'
-      target_version:
-        required: false
-        type: string
-        default: ''
-      run_backup:
-        required: false
-        type: boolean
-        default: true
-    secrets:
-      SF_ACCOUNT:
-        required: true
-      SF_USER:
-        required: true
-      SF_PASSWORD:
-        required: true
-      SF_ROLE:
-        required: false
-      SF_WAREHOUSE:
-        required: false
 
 jobs:
   deploy:
@@ -74,6 +47,14 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
       - name: Install schemachange
         run: pip install schemachange==3.7.0

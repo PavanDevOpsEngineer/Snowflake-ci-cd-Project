@@ -9,25 +9,47 @@ import snowflake.connector
 
 
 def main():
-    target = os.environ.get("TARGET_VERSION", "").strip()
-    if not target:
-        sys.exit("TARGET_VERSION env var is required (e.g. V1.3)")
+    def get_env(name, required=True):
+        val = os.environ.get(name)
+        if val is None:
+            if required:
+                sys.exit(f"{name} env var is required")
+            return None
+        v = val.strip()
+        if v in ("", '""', "''"):
+            if required:
+                sys.exit(f"{name} env var is empty or invalid: {val!r}")
+            return None
+        if len(v) >= 2 and v[0] == v[-1] and v[0] in ("'", '"'):
+            v = v[1:-1].strip()
+        if v == "":
+            if required:
+                sys.exit(f"{name} env var is empty after stripping quotes")
+            return None
+        return v
+
+    target = get_env("TARGET_VERSION")
 
     pattern = f"rollback/{target}*.sql"
     files = sorted(glob.glob(pattern), reverse=True)
     if not files:
         sys.exit(f"No rollback scripts found matching {pattern}")
 
-    conn = snowflake.connector.connect(
-        account=os.environ["SF_ACCOUNT"],
-        user=os.environ["SF_USER"],
-        password=os.environ["SF_PASSWORD"],
-        role=os.environ["SF_ROLE"],
-        warehouse=os.environ["SF_WAREHOUSE"],
-    )
-
+    account = get_env("SF_ACCOUNT")
+    user = get_env("SF_USER")
+    password = get_env("SF_PASSWORD")
+    role = get_env("SF_ROLE", required=False)
+    warehouse = get_env("SF_WAREHOUSE", required=False)
+    database = get_env("SF_DATABASE")
     schema = os.environ.get("SF_SCHEMA", "APP")
-    database = os.environ.get("SF_DATABASE", "")
+
+    conn = snowflake.connector.connect(
+        account=account,
+        user=user,
+        password=password,
+        role=role,
+        warehouse=warehouse,
+    )
 
     try:
         cur = conn.cursor()
@@ -49,7 +71,11 @@ def main():
         cur.execute("COMMIT")
         print("Rollback completed successfully.")
     except Exception as e:
-        cur.execute("ROLLBACK")
+        try:
+            # attempt to rollback if cursor/connection available; ignore any errors here
+            cur.execute("ROLLBACK")
+        except Exception:
+            pass
         raise RuntimeError(f"Rollback failed, transaction rolled back: {e}")
     finally:
         conn.close()
