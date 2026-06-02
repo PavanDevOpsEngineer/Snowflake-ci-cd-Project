@@ -7,7 +7,7 @@ CREATE OR REPLACE TABLE {{ env_schema }}.TEST_TABLE (
     CREATED_AT TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP()
 );
 
--- Verify test table was created
+-- Verify test table was created-
 DESCRIBE TABLE {{ env_schema }}.TEST_TABLE;
 
 -- Insert sample data into test table
